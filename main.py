@@ -3,18 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
 
+from api.router import api_router
+from core.config import settings
+
 # FastAPI instance creation
 app = FastAPI(
     title="pheidippedes-api",
     summary="An output integrationn designed for telex",
     version="0.1.0")
-
-class Payload(BaseModel):
-    event_name: str = "string"
-    message: str = "python post"
-    status: str = "success"
-    username: str = "Ayodeji"
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,6 +19,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+app.include_router(api_router, prefix=settings.API_PREFIX)
+
+
+class Payload(BaseModel):
+    event_name: str = "string"
+    message: str = "python post"
+    status: str = "success"
+    username: str = "Ayodeji"
 
 telex_channel_url = "https://ping.telex.im/v1/webhooks/0195057a-ebc9-7646-af52-41800fa80490"
 
