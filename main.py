@@ -8,8 +8,8 @@ from core.config import settings
 
 # FastAPI instance creation
 app = FastAPI(
-    title="pheidippedes-api",
-    summary="An output integrationn designed for telex",
+    title="pheidippides-api",
+    summary="An interval integrationn designed for telex",
     version="0.1.0")
 
 app.add_middleware(
@@ -35,7 +35,7 @@ telex_channel_url = "https://ping.telex.im/v1/webhooks/0195057a-ebc9-7646-af52-4
 async def root():
     return {
         "author": "Ayodeji Oni",
-        "api": "pheiddipedes"
+        "api": "pheiddipides"
     }
 
 async def telex(payload_data: Payload):
