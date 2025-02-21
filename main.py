@@ -8,13 +8,13 @@ from core.config import settings
 
 # FastAPI instance creation
 app = FastAPI(
-    title="pheidippides-api",
-    summary="An interval integrationn designed for telex",
+    title="Pheidippides API",
+    summary="An interval integration designed for telex",
     version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], #Only telex
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -35,7 +35,9 @@ telex_channel_url = "https://ping.telex.im/v1/webhooks/0195057a-ebc9-7646-af52-4
 async def root():
     return {
         "author": "Ayodeji Oni",
-        "api": "pheiddipides"
+        "integration name": "pheiddipides",
+        "description": "An integration that suggests books to read based on any selected genre.",
+        "version": "0.1.0",
     }
 
 async def telex(payload_data: Payload):
