@@ -32,7 +32,7 @@ def integration_json(request: Request):
                 "app_name": "Pheidippides API",
                 "app_description": "An integration that suggests books to read based on any selected genre.",
                 "app_logo": "https://i.imgur.com/D2619X4.jpeg",
-                "app_url": "http://102.37.155.61/pheidippides-api/",
+                "app_url": "http://102.37.155.61/pheidippides-api/", #change to an env variable
                 "background_color": "#fff"
             },
             "is_active": True,
@@ -70,7 +70,7 @@ def integration_json(request: Request):
                 }
             ],
             # "target_url": "\"\"",
-            "tick_url": "http://102.37.155.61/pheidippides-api/tick"
+            "tick_url": "http://102.37.155.61/pheidippides-api/tick" #change to an env variable
         }
     }
 
