@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Request, status
+import random
+from fastapi import APIRouter, BackgroundTasks, Request, status
+import httpx
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 
@@ -15,6 +17,13 @@ class TelexPayload(BaseModel):
     channel_id: str
     return_url: str
     settings: list[TelexSetting]
+
+
+class PheidippidesPayload(BaseModel):
+    message: str = "Could not resolve"
+    username: str = "Pheidippides API"
+    event_name: str = "Daily Book Recommendation"
+    status: str = "success"
 
 
 #telex integration.json endpoint
@@ -46,19 +55,19 @@ def integration_json(request: Request):
                     "label": "genre",
                     "type": "dropdown",
                     "required": True,
-                    "default": "random",
+                    "default": "fantasy",
                     "options": [
-                        "random",
-                        "fantasy",
-                        "mystery",
-                        "horror",
-                        "romance",
-                        "dystopian",
-                        "adventure",
-                        "biography",
-                        "history",
-                        "comedy",
-                        "nigerian"
+                            # "random", #issues with generating random genre on google api
+                            "fantasy",
+                            "mystery",
+                            "horror",
+                            "romance",
+                            "dystopian",
+                            "adventure",
+                            "biography",
+                            "history",
+                            "comedy",
+                            "nigerian"
                         ]
                 },
                 {
@@ -73,10 +82,73 @@ def integration_json(request: Request):
         }
     }
 
-#Implemetations to get genre from request payload
-# async
+
+async def get_recommendation(genre, max_results=20, limit=20):
+    #public api used for making queries
+    API = {
+        "google-books-api": f"https://www.googleapis.com/books/v1/volumes?q=subject:{genre}&maxResults={max_results}",
+        "open-library-api": f"https://openlibrary.org/subjects/{genre}.json?limit={limit}"
+    }
+
+    chosen_api = API[random.choice(["google-books-api", "open-library-api"])]
+
+    async with httpx.AsyncClient() as http_client:
+        try:
+            response = await http_client.get(chosen_api, timeout=10)
+            texts = response.json()
+
+            if chosen_api == API["google-books-api"]:
+                #data extraction
+                books = texts.get("items", [])
+                random_book = random.choice(list(books))
+                detail = random_book.get("volumeInfo")
+                title = detail.get("title")
+                authors = ", ".join(detail.get("authors"))
+                published_date = detail.get("publishedDate")
+                description = detail.get("description")
+                
+            elif chosen_api == API["open-library-api"]:
+                #data extraction
+                books = texts.get("works", [])
+                random_book = random.choice(list(books))
+                title = random_book.get("title")
+                authors = random_book.get("authors")[0].get("name")
+                published_date = random_book.get("first_publish_year")
+                description = ", ".join(random_book.get("subject")[0:3])
+
+            return f"📖Title: {title}\n\n✍Author(s): {authors}\n🗓Year: {published_date}\n\n📝Description: {description}"
+        except: 
+            return JSONResponse({"error": "Public API request failed"})
+    
+    
+
+#Implemetation to get genre from request payload
+async def receive_telex_payload(telex_payload: TelexPayload):
+
+    #getting the selected genre
+    genre = [s.default for s in telex_payload.settings if s.label == "genre"]
+    genre = str(genre[0])
+    
+    pheidippides_message = await get_recommendation(genre)
+    
+    payload = PheidippidesPayload(message=pheidippides_message)
+
+    async with httpx.AsyncClient() as http_client:
+        try:
+            response = await http_client.post(
+                "https://ping.telex.im/v1/webhooks/0195057a-ebc9-7646-af52-41800fa80490", #change to channel_url
+                json=payload.model_dump(),
+                headers={
+                    "Accept" : "application/json",
+                    "Content-Type": "application/json"}
+            )
+            return response.json()
+        except:
+            return JSONResponse({"error": "Error communicating with telex"})
+        
 
 #telex tick_url endpoint
 @router.post("/tick")
-def tick_url():
-    return {"tick url status": "Healthy"}
+async def tick_url(telex_payload: TelexPayload, background_tasks: BackgroundTasks):
+    background_tasks.add_task(receive_telex_payload, telex_payload)
+    return JSONResponse({"status": "accepted"})
