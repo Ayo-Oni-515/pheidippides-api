@@ -116,7 +116,7 @@ async def get_recommendation(genre, max_results=20, limit=20):
                 published_date = random_book.get("first_publish_year")
                 description = ", ".join(random_book.get("subject")[0:3])
 
-            return f"Title: {title}\n\nAuthor(s): {authors}\nYear: {published_date}\n\nDescription: {description}"
+            return f"📖Title: {title}\n\n✍Author(s): {authors}\n🗓Year: {published_date}\n\n📝Description: {description}"
         except: 
             return JSONResponse({"error": "Public API request failed"})
     
